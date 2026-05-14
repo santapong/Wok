@@ -1,0 +1,15 @@
+recipe pad_thai serves 2:
+    pantry:
+        rice_noodles = 200g
+        tamarind = 2 tbsp
+        eggs = 2
+        garlic = 3
+        oil = 2 tbsp
+        peanuts = 30g
+
+    soak(rice_noodles, in=water, for=15min)
+    heat(wok, until=smoking)
+    sauté(garlic, in=oil, for=30s)
+    crack(eggs, into=wok)
+    fold(rice_noodles, sauce=tamarind)
+    serve(garnish=peanuts)
