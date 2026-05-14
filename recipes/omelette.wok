@@ -1,0 +1,14 @@
+recipe omelette serves 1:
+    pantry:
+        eggs = 3
+        butter = 15g
+        salt = 1 tsp
+        chives = 5g
+
+    heat(pan, until=smoking)
+    crack(eggs, into=pan)
+    wait(30s)
+    fold(eggs)
+    season(eggs, with=salt)
+    chop(chives)
+    serve(garnish=chives)

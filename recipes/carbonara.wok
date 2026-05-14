@@ -1,0 +1,16 @@
+recipe carbonara serves 2:
+    pantry:
+        spaghetti = 200g
+        pancetta = 100g
+        eggs = 2
+        pecorino = 50g
+        pepper = 1 tsp
+        oil = 1 tbsp
+
+    boil(spaghetti, in=water, for=9min)
+    heat(pan, until=smoking)
+    sauté(pancetta, in=oil, for=3min)
+    crack(eggs, into=pan)
+    fold(spaghetti, sauce=pecorino)
+    season(spaghetti, with=pepper)
+    serve(garnish=pecorino)
