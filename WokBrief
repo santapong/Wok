@@ -1,0 +1,219 @@
+# `wok` — A Recipe-as-Language. Build Brief.
+
+You are an autonomous agent building `wok`, a tiny domain-specific language where recipes execute as programs. Work phase by phase. Commit after each checkpoint. **Do not skip ahead.**
+
+---
+
+## Mission
+
+Build a CLI tool `wok` that runs `.wok` files. A `.wok` file looks like a recipe. The interpreter executes it step-by-step, printing what's happening in the kitchen. Errors are kitchen-themed (`PantryError`, `KitchenError`, `MeasureError`).
+
+The goal is pedagogical: a clean, readable, hand-written interpreter. Code quality > feature count.
+
+---
+
+## Hard Constraints
+
+- **Language:** Python 3.12+
+- **Dependencies:** stdlib + `rich` (output) + `pytest` (tests). **Nothing else.** No `lark`, no `ply`, no `antlr`, no `typer`, no `click`.
+- **Parser:** hand-written recursive descent. No parser generators of any kind.
+- **Runtime:** tree-walking interpreter. No bytecode, no VM, no JIT.
+- **Surface:** CLI only. No web UI, no Docker, no database, no FastAPI, no async.
+
+If you find yourself wanting to add infrastructure, **stop and ask**. The point is the interpreter.
+
+---
+
+## Non-Goals (do NOT implement)
+
+- User-defined functions or closures
+- Type system (everything is `Quantity`, `Ingredient`, or `Duration`)
+- Stack-based VM or bytecode
+- Self-hosting
+- Standard library beyond the 10 verbs listed below
+- Configuration files, plugins, themes
+- Performance optimization of any kind
+
+---
+
+## File Layout
+
+```
+wok/
+├── pyproject.toml
+├── README.md
+├── wok/
+│   ├── __init__.py
+│   ├── lexer.py        # source → tokens
+│   ├── parser.py       # tokens → AST (recursive descent)
+│   ├── ast_nodes.py    # AST dataclasses
+│   ├── interpreter.py  # tree-walking eval
+│   ├── stdlib.py       # the 10 cooking verbs
+│   ├── errors.py       # KitchenError, PantryError, MeasureError
+│   └── cli.py          # `wok run recipe.wok`
+├── recipes/
+│   ├── pad_thai.wok
+│   ├── carbonara.wok
+│   └── omelette.wok
+└── tests/
+    ├── test_lexer.py
+    ├── test_parser.py
+    └── test_interpreter.py
+```
+
+---
+
+## Language Spec (v1)
+
+### Example program — `recipes/pad_thai.wok`
+
+```
+recipe pad_thai serves 2:
+    pantry:
+        rice_noodles = 200g
+        tamarind = 2 tbsp
+        eggs = 2
+        garlic = 3
+        oil = 2 tbsp
+        peanuts = 30g
+
+    soak(rice_noodles, in=water, for=15min)
+    heat(wok, until=smoking)
+    sauté(garlic, in=oil, for=30s)
+    crack(eggs, into=wok)
+    fold(rice_noodles, sauce=tamarind)
+    serve(garnish=peanuts)
+```
+
+### Tokens
+
+- **Keywords:** `recipe`, `serves`, `pantry`, `in`, `into`, `for`, `until`, `with`, `sauce`, `garnish`
+- **Identifiers:** `[a-z_][a-z0-9_]*`
+- **Numbers:** `200`, `2.5`
+- **Units:** `g`, `ml`, `tbsp`, `tsp`, `cup`, `min`, `s`
+- **Punctuation:** `:`, `,`, `(`, `)`, `=`
+- **Significant whitespace:** Python-style INDENT/DEDENT tokens
+
+### Grammar (informal EBNF)
+
+```
+recipe       := "recipe" IDENT "serves" NUMBER ":" NEWLINE INDENT pantry step+ DEDENT
+pantry       := "pantry" ":" NEWLINE INDENT (IDENT "=" value NEWLINE)+ DEDENT
+step         := IDENT "(" arglist ")" NEWLINE
+arglist      := arg ("," arg)*
+arg          := IDENT | quantity | kwarg
+kwarg        := IDENT "=" (IDENT | quantity | duration)
+quantity     := NUMBER UNIT          // 200g, 2 tbsp
+duration     := NUMBER ("min" | "s")
+value        := quantity | NUMBER    // bare count for things like "3 garlic"
+```
+
+### Built-in Verbs (in `stdlib.py`)
+
+Each takes positional + keyword args and prints a Rich status line.
+
+| # | Verb | Signature |
+|---|---|---|
+| 1 | `soak` | `(ingredient, in=liquid, for=duration)` |
+| 2 | `heat` | `(target, until=state \| for=duration)` |
+| 3 | `sauté` | `(ingredient, in=fat, for=duration)` |
+| 4 | `crack` | `(ingredient, into=target)` |
+| 5 | `fold` | `(ingredient, sauce=ingredient)` |
+| 6 | `boil` | `(ingredient, in=liquid, for=duration)` |
+| 7 | `chop` | `(ingredient)` |
+| 8 | `season` | `(target, with=ingredient)` |
+| 9 | `wait` | `(duration)` |
+| 10 | `serve` | `(garnish=ingredient)` |
+
+Output style example:
+```
+[1] 🌊 Soaking rice_noodles in water for 15min...
+[2] 🔥 Heating wok until smoking...
+[3] 🧄 Sautéing garlic in oil for 30s...
+```
+
+### Errors
+
+- `PantryError("ingredient 'tamarind' not in pantry", line=7)` — undeclared ingredient
+- `KitchenError("can't crack rice_noodles — only eggs can be cracked", line=9)`
+- `MeasureError("incompatible units: tbsp vs g", line=4)`
+
+All errors render with Rich, showing the offending line.
+
+---
+
+## Build Order — Phased
+
+### Phase 1 — Skeleton (1h)
+
+- [ ] `pyproject.toml` with project metadata, deps, console_scripts entry for `wok`
+- [ ] Empty modules with docstrings
+- [ ] `wok --version` works
+- [ ] `wok run path.wok` parses CLI args (does nothing yet)
+- **Checkpoint:** `pip install -e .` succeeds; `wok --help` shows usage. Commit.
+
+### Phase 2 — Lexer (2h)
+
+- [ ] `Token` dataclass: `kind`, `value`, `line`, `col`
+- [ ] `lex(source: str) -> list[Token]`
+- [ ] INDENT/DEDENT handling (track indent stack)
+- [ ] NEWLINE tokens
+- [ ] Unit + number combination (`200g` → `NUMBER(200) UNIT(g)` or single `QUANTITY` token — your call, document it)
+- [ ] `test_lexer.py`: 10+ cases including malformed input
+- **Checkpoint:** lexing `pad_thai.wok` produces a sensible token stream. Commit.
+
+### Phase 3 — Parser (3h)
+
+- [ ] AST node dataclasses in `ast_nodes.py`: `Recipe`, `PantryDecl`, `Step`, `Quantity`, `Duration`, `KwArg`, `Ident`
+- [ ] Recursive-descent parser in `parser.py`
+- [ ] One method per grammar rule: `parse_recipe`, `parse_pantry`, `parse_step`, `parse_arglist`, `parse_arg`, `parse_value`
+- [ ] Helpful syntax errors with line numbers
+- [ ] `test_parser.py`: parses all 3 example recipes; rejects 5+ malformed inputs
+- **Checkpoint:** `pad_thai.wok` parses to a complete AST. Commit.
+
+### Phase 4 — Interpreter (3h)
+
+- [ ] `Environment` class wrapping the pantry dict
+- [ ] `Interpreter.run(recipe: Recipe)` dispatches each step to the verb table
+- [ ] Verb table maps name → callable from `stdlib.py`
+- [ ] Each verb resolves its args from the environment, prints a Rich status line, updates state if needed
+- [ ] `test_interpreter.py`: full run of `pad_thai.wok` produces expected output; bad recipes raise the right errors
+- **Checkpoint:** `wok run recipes/pad_thai.wok` runs end-to-end. Commit.
+
+### Phase 5 — Polish (1h)
+
+- [ ] All 3 example recipes execute cleanly
+- [ ] Pretty error rendering (Rich `Panel`, with source snippet + caret)
+- [ ] README with: install steps, full `pad_thai.wok` source, screenshot or asciicast of output, language reference
+- [ ] `--version`, `--help` are good
+- **Checkpoint:** README is shareable. Commit. Done.
+
+---
+
+## Acceptance Criteria
+
+- [ ] `wok run recipes/pad_thai.wok` exits 0 and produces formatted step-by-step output
+- [ ] `wok run recipes/carbonara.wok` and `wok run recipes/omelette.wok` both succeed
+- [ ] Referencing an undeclared ingredient raises `PantryError` with the correct line number
+- [ ] `crack(rice_noodles, into=wok)` raises `KitchenError` (only eggs can be cracked)
+- [ ] `pytest` passes; coverage >80% on `lexer.py` + `parser.py`
+- [ ] README contains a complete recipe + its rendered output
+- [ ] Total LOC under 800 (target ~500–700). If you're over, you're over-engineering.
+
+---
+
+## Working Style
+
+- Commit after every checkpoint with a clear message.
+- Write tests **alongside** each phase, not at the end.
+- If you spend >30 min stuck on parser theory: **stop and ask**.
+- If you find yourself reaching for a library beyond `rich` + `pytest`: **stop and ask**.
+- Do not optimize. Do not abstract prematurely. Do not add features not in this brief.
+
+---
+
+## Why This Project
+
+It's pedagogical. The user (an experienced engineer) has never built a programming language. The goal is to feel the full pipeline — source → tokens → AST → interpreted execution — with their own hands, in code small enough to hold in their head. Every shortcut (parser generator, AST library, etc.) defeats the point.
+
+When done, they will read every other language differently. That's the deliverable.
