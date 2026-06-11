@@ -7,7 +7,7 @@ from typing import Any
 from rich.console import Console
 from rich.panel import Panel
 
-from .ast_nodes import Count, Duration, Ident, KwArg, Quantity, Recipe, Step
+from .ast_nodes import Count, Duration, Ident, Recipe, Step
 from .errors import KitchenError, MeasureError, PantryError
 from .stdlib import VERB_TABLE
 
@@ -63,18 +63,9 @@ class Interpreter:
 
     # ---- internals ------------------------------------------------------
     def _build_pantry(self) -> Environment:
-        items: dict[str, Any] = {}
-        for entry in self.recipe.pantry:
-            value = entry.value
-            # Values in the pantry are always concrete — Quantity, Duration,
-            # or Count — not Idents. The parser enforces this.
-            if isinstance(value, Ident):
-                raise PantryError(
-                    f"pantry value for '{entry.name}' must be a quantity or count",
-                    line=entry.line,
-                )
-            items[entry.name] = value
-        return Environment(items)
+        # Pantry values are always concrete — Quantity, Duration, or Count —
+        # never Idents. The parser enforces this.
+        return Environment({entry.name: entry.value for entry in self.recipe.pantry})
 
     def _print_pantry(self, env: Environment) -> None:
         lines = []
