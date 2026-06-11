@@ -2,30 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
 
 from rich.console import Console
 
-from .ast_nodes import Duration, Quantity
+from .ast_nodes import Duration
 from .errors import KitchenError
 
 console = Console()
 
 # Cracking is reserved for things that come in a shell.
 CRACKABLE = {"egg", "eggs", "coconut", "walnut", "walnuts"}
-
-
-@dataclass
-class VerbResult:
-    name: str
-    consumed: list[str]
-
-
-def _fmt(val: Any) -> str:
-    if isinstance(val, (Quantity, Duration)):
-        return str(val)
-    return str(val)
 
 
 def _print(step_no: int, body: str) -> None:
@@ -55,9 +42,8 @@ def verb_soak(args, kwargs, *, line, step_no):
     _require("soak", kwargs, "in", "for", line=line)
     if len(args) != 1:
         raise KitchenError("soak() needs exactly one ingredient", line=line)
-    _print(step_no, f"🌊 Soaking [bold]{args[0]}[/bold] in {_fmt(kwargs['in'])} "
-                    f"for {_fmt(kwargs['for'])}...")
-    return VerbResult("soak", [str(args[0])])
+    _print(step_no, f"🌊 Soaking [bold]{args[0]}[/bold] in {kwargs['in']} "
+                    f"for {kwargs['for']}...")
 
 
 def verb_heat(args, kwargs, *, line, step_no):
@@ -68,10 +54,9 @@ def verb_heat(args, kwargs, *, line, step_no):
         raise KitchenError("heat() needs either 'until=' or 'for='", line=line)
     target = args[0]
     if "until" in kwargs:
-        _print(step_no, f"🔥 Heating [bold]{target}[/bold] until {_fmt(kwargs['until'])}...")
+        _print(step_no, f"🔥 Heating [bold]{target}[/bold] until {kwargs['until']}...")
     else:
-        _print(step_no, f"🔥 Heating [bold]{target}[/bold] for {_fmt(kwargs['for'])}...")
-    return VerbResult("heat", [])
+        _print(step_no, f"🔥 Heating [bold]{target}[/bold] for {kwargs['for']}...")
 
 
 def verb_saute(args, kwargs, *, line, step_no):
@@ -79,9 +64,8 @@ def verb_saute(args, kwargs, *, line, step_no):
     _require("sauté", kwargs, "in", "for", line=line)
     if len(args) != 1:
         raise KitchenError("sauté() needs exactly one ingredient", line=line)
-    _print(step_no, f"🧄 Sautéing [bold]{args[0]}[/bold] in {_fmt(kwargs['in'])} "
-                    f"for {_fmt(kwargs['for'])}...")
-    return VerbResult("sauté", [str(args[0])])
+    _print(step_no, f"🧄 Sautéing [bold]{args[0]}[/bold] in {kwargs['in']} "
+                    f"for {kwargs['for']}...")
 
 
 def verb_crack(args, kwargs, *, line, step_no):
@@ -96,8 +80,7 @@ def verb_crack(args, kwargs, *, line, step_no):
             f"can't crack {ingredient} — only eggs can be cracked",
             line=line,
         )
-    _print(step_no, f"🥚 Cracking [bold]{ingredient}[/bold] into {_fmt(kwargs['into'])}...")
-    return VerbResult("crack", [ingredient])
+    _print(step_no, f"🥚 Cracking [bold]{ingredient}[/bold] into {kwargs['into']}...")
 
 
 def verb_fold(args, kwargs, *, line, step_no):
@@ -108,8 +91,7 @@ def verb_fold(args, kwargs, *, line, step_no):
     if sauce is None:
         _print(step_no, f"🥢 Folding [bold]{args[0]}[/bold]...")
     else:
-        _print(step_no, f"🥢 Folding [bold]{args[0]}[/bold] with {_fmt(sauce)}...")
-    return VerbResult("fold", [str(args[0])])
+        _print(step_no, f"🥢 Folding [bold]{args[0]}[/bold] with {sauce}...")
 
 
 def verb_boil(args, kwargs, *, line, step_no):
@@ -117,9 +99,8 @@ def verb_boil(args, kwargs, *, line, step_no):
     _require("boil", kwargs, "in", "for", line=line)
     if len(args) != 1:
         raise KitchenError("boil() needs exactly one ingredient", line=line)
-    _print(step_no, f"♨️  Boiling [bold]{args[0]}[/bold] in {_fmt(kwargs['in'])} "
-                    f"for {_fmt(kwargs['for'])}...")
-    return VerbResult("boil", [str(args[0])])
+    _print(step_no, f"♨️  Boiling [bold]{args[0]}[/bold] in {kwargs['in']} "
+                    f"for {kwargs['for']}...")
 
 
 def verb_chop(args, kwargs, *, line, step_no):
@@ -127,7 +108,6 @@ def verb_chop(args, kwargs, *, line, step_no):
     if len(args) != 1:
         raise KitchenError("chop() needs exactly one ingredient", line=line)
     _print(step_no, f"🔪 Chopping [bold]{args[0]}[/bold]...")
-    return VerbResult("chop", [str(args[0])])
 
 
 def verb_season(args, kwargs, *, line, step_no):
@@ -135,8 +115,7 @@ def verb_season(args, kwargs, *, line, step_no):
     _require("season", kwargs, "with", line=line)
     if len(args) != 1:
         raise KitchenError("season() needs exactly one target", line=line)
-    _print(step_no, f"🧂 Seasoning [bold]{args[0]}[/bold] with {_fmt(kwargs['with'])}...")
-    return VerbResult("season", [str(args[0])])
+    _print(step_no, f"🧂 Seasoning [bold]{args[0]}[/bold] with {kwargs['with']}...")
 
 
 def verb_wait(args, kwargs, *, line, step_no):
@@ -149,8 +128,7 @@ def verb_wait(args, kwargs, *, line, step_no):
             f"wait() expects a duration (e.g. 30s, 5min), got {duration!r}",
             line=line,
         )
-    _print(step_no, f"⏳ Waiting [bold]{_fmt(duration)}[/bold]...")
-    return VerbResult("wait", [])
+    _print(step_no, f"⏳ Waiting [bold]{duration}[/bold]...")
 
 
 def verb_serve(args, kwargs, *, line, step_no):
@@ -158,13 +136,12 @@ def verb_serve(args, kwargs, *, line, step_no):
     if args:
         raise KitchenError("serve() takes no positional arguments", line=line)
     if "garnish" in kwargs:
-        _print(step_no, f"🍽️  Serving, garnished with [bold]{_fmt(kwargs['garnish'])}[/bold].")
+        _print(step_no, f"🍽️  Serving, garnished with [bold]{kwargs['garnish']}[/bold].")
     else:
         _print(step_no, "🍽️  Serving.")
-    return VerbResult("serve", [])
 
 
-VERB_TABLE: dict[str, Callable[..., VerbResult]] = {
+VERB_TABLE: dict[str, Callable[..., None]] = {
     "soak": verb_soak,
     "heat": verb_heat,
     "sauté": verb_saute,
