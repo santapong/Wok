@@ -1,7 +1,14 @@
 # wok
 
+[![CI](https://github.com/santapong/Wok/actions/workflows/ci.yml/badge.svg)](https://github.com/santapong/Wok/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/wok-lang)](https://pypi.org/project/wok-lang/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A tiny recipe-as-language. `.wok` files look like recipes; the interpreter
 executes them step-by-step and prints what's happening in the kitchen.
+
+![wok running pad_thai.wok](docs/demo.svg)
 
 ```
 recipe pad_thai serves 2:
@@ -51,6 +58,12 @@ hand-written recursive-descent parser, tree-walking interpreter. No
 parser generators, no AST libraries, no VMs.
 
 ## Install
+
+```
+pip install wok-lang
+```
+
+Or from a clone, for hacking:
 
 ```
 pip install -e .
@@ -156,6 +169,8 @@ recipes/            # example .wok files
 tests/              # pytest suite (lexer, parser, interpreter)
 ```
 
+How the stages fit together is described in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Development
 
 ```
@@ -163,7 +178,9 @@ pip install -e '.[dev]'
 pytest
 ```
 
-The full test suite runs in well under a second.
+The full test suite runs in well under a second. Contributions welcome —
+see [CONTRIBUTING.md](CONTRIBUTING.md) for what fits (new recipes and
+verbs especially).
 
 ## Non-goals
 
